@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audiodriveer</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    header {
+        background-color: rgb(37, 35, 35);
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    span {
+        color: aliceblue;
+        font-family: arial;
+        margin-left: 20px;
+    }
+    button {
+        margin-left: auto;
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: none;
+        background: none;
+        color: aliceblue;
+        cursor: pointer;
+    }
+
+    /* Responsivo para telas pequenas */
+    @media (max-width: 600px) {
+        header.menu {
+            gap: 8px;
+        }
+        .titulo {
+            margin-left: 0;
+        }
+        .upload {
+            flex: 1 1 100%;
+            margin-left: 0;
+            padding: 10px;
+        }
+    }
+
+    /* Layout conteúdo */
+    .container {
+        padding: 16px;
+        background: #111;
+        min-height: calc(100vh - 56px);
+        color: #eaeaea;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+    }
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #f5f5f5;
+    }
+
+    /* Tabela */
+    .table-wrap {
+        background: #1f1f1f;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead th {
+        text-align: left;
+        background: #222;
+        color: #cfcfcf;
+        font-weight: 600;
+        padding: 12px;
+        border-bottom: 1px solid #2a2a2a;
+        font-size: 0.9rem;
+    }
+    tbody td {
+        padding: 12px;
+        border-bottom: 1px solid #2a2a2a;
+        color: #e5e5e5;
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .audio-cell audio {
+        width: 240px;
+        max-width: 100%;
+        height: 32px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .btn {
+        margin-left: 0;
+        background: #2a2a2a;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        border: 1px solid #3a3a3a;
+    }
+    .btn:hover { background: #393939; }
+    .btn-danger { background: #b91c1c; border-color: #991b1b; }
+    .btn-danger:hover { background: #991b1b; }
+
+    .empty-row td {
+        text-align: center;
+        color: #bdbdbd;
+        padding: 28px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+        width: 100%;
+        max-width: 480px;
+        background: #1f1f1f;
+        color: #f5f5f5;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        padding: 16px;
+    }
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+    }
+    .close-modal {
+        margin-left: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        background: #2a2a2a;
+        color: #fff;
+        font-size: 20px;
+        line-height: 1;
+    }
+    .close-modal:hover { background: #393939; }
+
+    .modal-body {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .modal-body label {
+        font-size: 0.95rem;
+        color: #dcdcdc;
+    }
+    .modal-body input[type="file"] {
+        margin-left: 0;
+        padding: 10px;
+        border-radius: 8px;
+        background: #2a2a2a;
+        color: #eaeaea;
+        border: 1px solid #3a3a3a;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    .publish {
+        margin-left: 0;
+        background: #161618;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .publish:hover { background: #000000; }
+    /* Ajuda e erro na modal */
+    .modal-body .hint { font-size: 0.85rem; color: #a8a8a8; }
+    .modal-body .error { font-size: 0.9rem; color: #ef4444; margin-top: 6px; }
+    .publish[disabled] { opacity: 0.6; cursor: not-allowed; }
+</style>
+<body>
+    <header class="menu">
+        <span class="titulo">Audiodriveer</span>
+        <button class="upload" aria-haspopup="dialog" aria-controls="uploadModal">Upload +</button>
+    </header>
+
+    <main class="container">
+        <div class="section">
+            <div class="section-title">Painel de áudios</div>
+            <div class="table-wrap">
+                <table aria-label="Tabela de áudios">
+                    <thead>
+                        <tr>
+                            <th>Arquivo</th>
+                            <th>Tamanho</th>
+                            <th>Prévia</th>
+                            <th style="width: 220px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audioTbody">
+                        <tr class="empty-row"><td colspan="4">Nenhum áudio publicado ainda.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Upload -->
+    <div id="uploadModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="uploadTitle">
+        <div class="modal" role="document">
+            <div class="modal-header">
+                <h2 id="uploadTitle" class="modal-title">Publicar áudio</h2>
+                <button class="close-modal" aria-label="Fechar" title="Fechar">×</button>
+            </div>
+            <div class="modal-body">
+                <label for="audioFile">Selecione um arquivo de áudio</label>
+                <input type="file" id="audioFile" accept="audio/*" required />
+                <small class="hint">Apenas arquivos de áudio. Tamanho máximo: 100MB.</small>
+                <div id="fileError" class="error" role="alert" aria-live="polite" style="display:none;"></div>
+            </div>
+            <div class="modal-actions">
+                <button id="publishAudio" class="publish" disabled>Publicar áudio</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const openBtn = document.querySelector('.upload');
+            const modalOverlay = document.getElementById('uploadModal');
+            const closeBtn = modalOverlay.querySelector('.close-modal');
+            const publishBtn = document.getElementById('publishAudio');
+            const fileInput = document.getElementById('audioFile');
+            const tbody = document.getElementById('audioTbody');
+            const errorEl = document.getElementById('fileError');
+
+            const MAX_BYTES = 100 * 1024 * 1024; // 100MB
+            let lastFocused;
+            let posts = [];
+            let nextId = 1;
+
+            function openModal() {
+                lastFocused = document.activeElement;
+                modalOverlay.classList.add('open');
+                modalOverlay.setAttribute('aria-hidden', 'false');
+                // reset estado
+                errorEl.style.display = 'none';
+                errorEl.textContent = '';
+                publishBtn.disabled = !(fileInput.files && fileInput.files[0]);
+                setTimeout(() => fileInput && fileInput.focus(), 0);
+            }
+
+            function closeModal() {
+                modalOverlay.classList.remove('open');
+                modalOverlay.setAttribute('aria-hidden', 'true');
+                if (lastFocused && typeof lastFocused.focus === 'function') {
+                    lastFocused.focus();
+                }
+            }
+
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2) + ' ' + sizes[i];
+            }
+
+            function renderTable() {
+                tbody.innerHTML = '';
+                if (posts.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'empty-row';
+                    tr.innerHTML = '<td colspan="4">Nenhum áudio publicado ainda.</td>';
+                    tbody.appendChild(tr);
+                    return;
+                }
+                for (const post of posts) {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = String(post.id);
+                    tr.innerHTML = `
+                        <td>${post.name}</td>
+                        <td>${formatBytes(post.size)}</td>
+                        <td class="audio-cell">
+                            <audio controls src="${post.url}"></audio>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn" data-action="download" title="Baixar">Baixar</button>
+                                <button class="btn btn-danger" data-action="delete" title="Excluir">Excluir</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            }
+
+            function addPostFromFile(file) {
+                const url = URL.createObjectURL(file);
+                const id = nextId++;
+                const post = {
+                    id,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    url,
+                    createdAt: Date.now()
+                };
+                posts.unshift(post);
+                renderTable();
+            }
+
+            function validateFile() {
+                const file = fileInput.files && fileInput.files[0];
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+                publishBtn.disabled = true;
+                if (!file) {
+                    return;
+                }
+                if (!file.type || !file.type.startsWith('audio/')) {
+                    errorEl.textContent = 'O arquivo selecionado não é um áudio válido.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                if (file.size > MAX_BYTES) {
+                    errorEl.textContent = 'O áudio excede o limite de 100MB.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                publishBtn.disabled = false;
+            }
+
+            openBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modalOverlay.classList.contains('open')) {
+                    closeModal();
+                }
+            });
+
+            fileInput.addEventListener('change', validateFile);
+
+            publishBtn.addEventListener('click', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) {
+                    alert('Selecione um arquivo de áudio antes de publicar.');
+                    return;
+                }
+                if (!file.type || !file.type.startsWith('audio/')) {
+                    alert('O arquivo selecionado não é um áudio válido.');
+                    return;
+                }
+                if (file.size > MAX_BYTES) {
+                    alert('O áudio deve ter no máximo 100MB.');
+                    return;
+                }
+                addPostFromFile(file);
+                closeModal();
+                fileInput.value = '';
+                publishBtn.disabled = true;
+            });
+
+            // Delegação de eventos para ações da tabela
+            tbody.addEventListener('click', (e) => {
+                const target = e.target;
+                if (!(target instanceof HTMLElement)) return;
+                const action = target.getAttribute('data-action');
+                if (!action) return;
+                const row = target.closest('tr');
+                if (!row) return;
+                const id = Number(row.dataset.id);
+                const postIdx = posts.findIndex(p => p.id === id);
+                if (postIdx === -1) return;
+                const post = posts[postIdx];
+
+                if (action === 'download') {
+                    const a = document.createElement('a');
+                    a.href = post.url;
+                    a.download = post.name || 'audio';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else if (action === 'delete') {
+                    URL.revokeObjectURL(post.url);
+                    posts.splice(postIdx, 1);
+                    renderTable();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                for (const p of posts) {
+                    try { URL.revokeObjectURL(p.url); } catch {}
+                }
+            });
+
+            renderTable();
+        })();
+    </script>
+</body>
+</html>
